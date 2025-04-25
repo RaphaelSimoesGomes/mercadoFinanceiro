@@ -32,7 +32,9 @@ O sistema realiza a consulta de informações de ações brasileiras utilizando 
 │ └── index.json
 ├── scripts/
 │ ├── api_client.py
-│ └── data_cleaner.py
+│ ├── data_cleaner.py
+│ └── get_signal.py
+├── .env.example
 ├── main.py
 └── README.md
 ```
@@ -40,6 +42,8 @@ O sistema realiza a consulta de informações de ações brasileiras utilizando 
 - **data/index.json**: Arquivo JSON que mapeia IDs para códigos de ações da B3.
 - **scripts/api_client.py**: Função para buscar dados de ações na API.
 - **scripts/data_cleaner.py**: Função para tratar os dados de ações da API.
-- **main.py**: Script principal para executar a consulta e exibir o result
+- **scripts/get_signal.py**: Função para a condição da ação (comprar, vender ou manter).
+- **.env**: Os dados confidenciais para a aplicação, como o token da api utilizada.
+- **main.py**: Script principal para executar a consulta e exibir o result.
 
 <img width=100% src="https://capsule-render.vercel.app/api?type=waving&color=00494c&height=120&section=footer"/>
