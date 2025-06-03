@@ -20,7 +20,8 @@ stock_info = {
     "change": None,
     "signal": "Aguardando dados..."
 }
-
+historical_range = "1mo"
+period_options = ["1d", "5d", "1mo", "3mo"]
 stock_data = pd.DataFrame({
     "Tempo": [],
     "Preço": [],
@@ -37,53 +38,48 @@ should_stop = False
 def update_stock_data(state):
     state.loading = True
     try:
-        action_id = id_to_stock.get(state.selected_stock, "20")
-        data = get_stock_data(action_id)
-        
-        if data and 'results' in data and len(data['results']) > 0:
-            stock = data['results'][0]
-            current_time = datetime.now()
-            price = stock.get('regularMarketPrice', None)
-            change = stock.get('regularMarketChangePercent', None)
+        ticker = id_to_stock.get(state.selected_stock, state.selected_stock)
+        period = state.historical_range
 
-            try:
-                price = float(price) if price is not None else None
-            except Exception:
-                price = None
-            
-            try:
-                change = float(change) if change is not None else None
-            except Exception:
-                change = None
-            
-            state.stock_info = {
-                "name": stock.get('longName', 'Nome não disponível'),
-                "price": price,
-                "change": change,
-                "signal": get_signal(change if change is not None else 0)
-            }
-            
-            new_row = pd.DataFrame({
-                "Tempo": [current_time],
-                "Preço": [price if price is not None else 0],
-                "Variação (%)": [change if change is not None else 0]
-            })
-            
-            state.stock_data = pd.concat([state.stock_data, new_row]).tail(20)
-            notify(state, "success", f"Dados atualizados: {state.selected_stock}")
-        else:
-            state.stock_info = {
-                "name": "Sem dados",
-                "price": None,
-                "change": None,
-                "signal": "Sem dados"
-            }
-            notify(state, "error", "Dados não encontrados")
-    except Exception as e:
-        notify(state, "error", f"Erro: {str(e)}")
+        data   = get_stock_data(ticker, period)
+        prices = (data.get("results") or [{}])[0]["historicalDataPrice"]
+
+        if not prices:
+            notify(state, "error", "Sem dados históricos.")
+            return
+
+        df = (pd.DataFrame(prices)
+                .assign(
+                    Tempo = lambda d: pd.to_datetime(
+                        d["date"].astype("int64"), unit="s", utc=True
+                    ).dt.tz_convert("America/Sao_Paulo")
+                    .dt.strftime("%d/%m/%Y"),
+                    Preço = lambda d: d["close"].astype(float)
+                )
+                .loc[:, ["Tempo", "Preço"]])
+
+        df["Variação (%)"] = df["Preço"].pct_change().mul(100).fillna(0)
+
+        state.stock_data = df.sort_values("Tempo").reset_index(drop=True)
+        last_price, last_pct = df.iloc[-1][["Preço", "Variação (%)"]]
+
+        state.stock_info = {
+            "name"  : state.selected_stock,
+            "price" : last_price,
+            "change": last_pct,
+            "signal": get_signal(last_pct)
+        }
+
+        notify(state, "success", f"Histórico de {period} carregado.")
+    except Exception as err:
+        notify(state, "error", f"Erro: {err}")
     finally:
         state.loading = False
-        state.next_update = state.refresh_interval
+
+
+def on_period_change(state, var_name, var_value):
+    update_stock_data(state)
+
 
 def on_stock_change(state, var_name, var_value):
     state.stock_data = pd.DataFrame({
@@ -154,6 +150,7 @@ page = """
 ## Configurações
 <|{auto_refresh}|toggle|label=Atualização automática|on_change=toggle_auto_refresh|>
 <|{refresh_interval}|number|label=Intervalo (s)|min=1|max=60|on_change=on_interval_change|>
+<|{historical_range}|selector|label=Período Histórico|lov={period_options}|on_change=on_period_change|dropdown|>
 |>
 <|container|
 ## Controles
@@ -187,8 +184,8 @@ page = """
 gui = Gui(page)
 
 def on_init(state):
+    update_stock_data(state)
     if state.auto_refresh:
-        toggle_auto_refresh(state)
         toggle_auto_refresh(state)
 if __name__ == "__main__":
     gui.run(title="Stock Dashboard", port=5001, use_reloader=True, on_init=on_init)
