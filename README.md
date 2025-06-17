@@ -28,6 +28,8 @@ VIDEO DO PROJETO
 
 [Assista o vídeo no YouTube](https://youtu.be/RvmOVJgXrm4)
 
+[Assista o vídeo no drive](https://drive.google.com/file/d/1ch2KitS4MJHGnaMEDn5gOV4eqIH7BqnO/view?usp=sharing)
+
 ---
 
 ## Estrutura do Projeto
