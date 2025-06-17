@@ -23,6 +23,11 @@ Este projeto tem como objetivo aplicar técnicas de ciência de dados para a **p
 
 O sistema realiza a consulta de informações de ações brasileiras utilizando a API pública [brapi.dev](https://brapi.dev), exibindo de forma simples os principais dados de uma ação selecionada.
 
+
+VIDEO DO PROJETO
+
+https://drive.google.com/file/d/1ch2KitS4MJHGnaMEDn5gOV4eqIH7BqnO/view?usp=sharing 
+
 ---
 
 ## Estrutura do Projeto
